@@ -504,6 +504,7 @@ interface INFBContract {
     function mintPrice() external view returns(uint256);
     function saleActive() external view returns(bool);
     function totalSupply() external view returns(uint256);
+    function totalSize() external view returns(uint256);
     function mintFromPacker(uint256 quantity, address to) external;
 }
 
@@ -521,6 +522,7 @@ contract NFBPacker is Ownable, ReentrancyGuard {
         uint256 mintPrice;
         bool saleActive;
         uint256 totalSupply;
+        uint256 totalSize;
     }
 
     /** Constructor */
@@ -573,7 +575,8 @@ contract NFBPacker is Ownable, ReentrancyGuard {
                         maxMintPerAddress: NFBContracts[i].maxMintPerAddress(),
                         mintPrice: NFBContracts[i].mintPrice(),
                         saleActive:  NFBContracts[i].saleActive(),
-                        totalSupply: NFBContracts[i].totalSupply()
+                        totalSupply: NFBContracts[i].totalSupply(),
+                        totalSize: NFBContracts[i].totalSize()
                     }        
                 );
         }
