@@ -583,6 +583,7 @@ contract NFBPacker is Ownable, ReentrancyGuard {
 
     /// OWNER FUNCTIONS ///
 
+    /** Set NFB Contracts */
     function setNFBContracts(address[] memory contractAddresses) external onlyOwner nonReentrant {
         require(contractAddresses.length > 0 && contractAddresses.length + NFBContracts.length <= contractSize, "The number of collections is wrong.");
         for(uint256 i = 0; i < contractAddresses.length; i ++ ) {
@@ -590,8 +591,26 @@ contract NFBPacker is Ownable, ReentrancyGuard {
         }
     }
 
+    /** The number of NFB Contracts */
     function setContractSize(uint256 size) external onlyOwner nonReentrant {
         contractSize = size;
+    }
+
+    /** Owner Mint Function */
+    function ownerMint(address to, uint256[] memory quantity)
+        external
+        callerIsUser
+        onlyOwner
+    {
+        require(quantity.length == contractSize, "The number of collections is wrong.");
+
+        uint256 totalQuantity = 0;
+        for( uint256 i = 0; i < contractSize; i ++ ) {
+            totalQuantity += quantity[i];
+            NFBContracts[i].mintFromPacker(quantity[i], to);
+        }
+
+        mapUserCount[to] = mapUserCount[to] + totalQuantity;
     }
 
     /** Standard withdraw function for the owner to pull the contract */

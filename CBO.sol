@@ -1448,9 +1448,9 @@ contract NFBCBO is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
     address public packerContract;
 
     /** URI Variables */
-    string public uriSuffix = ".json";
-    string private _baseTokenURI = "";
-    string public hiddenMetadataUri = "ipfs://sc/hidden.json";
+    string public uriSuffix = "";
+    string private _baseTokenURI = "https://nft.tudabirds.io/api/nfbcbo/";
+    string public hiddenMetadataUri = "https://nft.tudabirds.io/api/nfbcbo/hidden";
 
     /** Constructor - initialize the contract by setting the name, symbol, 
         max amount an address can mint, and the total collection size. */
@@ -1591,6 +1591,7 @@ contract NFBCBO is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
 
     /** Mint Function only usable by contract owner. Use reserved for giveaways and promotions. */
     function ownerMint(address to, uint256 quantity) public callerIsUser onlyOwner {
+        require(quantity + totalSupply() <= totalSize, "Max supply reached");
         require(quantity + totalSupply() <= collectionSize, 'Max supply reached');
         _safeMint(to, quantity);
     }
