@@ -1432,12 +1432,12 @@ contract ControlledAccess is Ownable {
 }
 
 
-// File contracts/NFBCBO.sol
+// File contracts/NFTCBO.sol
 
 
 pragma solidity 0.8.9;
 
-contract NFBCBO is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
+contract NFTCBO is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
     using Strings for uint256; 
     /** Contract Functionality Variables */
     uint256 public constant maxMintPerAddress = 100;
@@ -1454,7 +1454,7 @@ contract NFBCBO is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
 
     /** Constructor - initialize the contract by setting the name, symbol, 
         max amount an address can mint, and the total collection size. */
-    constructor() ERC721A( "tudaBirds NFB CBO", "NFBCBO", maxMintPerAddress, 1000) {
+    constructor() ERC721A( "tudaBirds NFB CBO", "NFTCBO", maxMintPerAddress, 1000) {
     }
 
     /** Modifier - ensures the function caller is the user */

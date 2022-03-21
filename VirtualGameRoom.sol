@@ -1432,12 +1432,12 @@ contract ControlledAccess is Ownable {
 }
 
 
-// File contracts/NFBVGR.sol
+// File contracts/NFTVGR.sol
 
 
 pragma solidity 0.8.9;
 
-contract NFBVGR is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
+contract NFTVGR is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
     using Strings for uint256; 
     /** Contract Functionality Variables */
     uint256 public constant maxMintPerAddress = 100;
@@ -1454,7 +1454,7 @@ contract NFBVGR is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
 
     /** Constructor - initialize the contract by setting the name, symbol, 
         max amount an address can mint, and the total collection size. */
-    constructor() ERC721A( "tudaBirds Virtual Game Room", "NFBVGR", maxMintPerAddress, 2500) {
+    constructor() ERC721A( "tudaBirds Virtual Game Room", "NFTVGR", maxMintPerAddress, 2500) {
     }
 
     /** Modifier - ensures the function caller is the user */

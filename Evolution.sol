@@ -1434,7 +1434,6 @@ contract ControlledAccess is Ownable {
 
 // File contracts/NFBEVO.sol
 
-
 pragma solidity 0.8.9;
 
 contract NFBEVO is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
@@ -1451,6 +1450,10 @@ contract NFBEVO is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
     string public uriSuffix = "";
     string private _baseTokenURI = "https://nft.tudabirds.io/api/nfbevo/";
     string public hiddenMetadataUri = "https://nft.tudabirds.io/api/nfbevo/hidden";
+
+    /** Launchpad */
+    address public LAUNCHPAD;
+    bool public launchpadActive = false;
 
     /** Constructor - initialize the contract by setting the name, symbol, 
         max amount an address can mint, and the total collection size. */
@@ -1472,12 +1475,21 @@ contract NFBEVO is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
     /** Modifier - ensures all minting requirements are met, used in both public and presale 
         mint functions. Structure allows mintCompliance input values (_quantity, _maxPerAddress 
         and _startTime) to be function specific */
-    modifier mintCompliance(uint256 _quantity, uint256 _maxPerAddress, uint256 _maxMintPerTx) {
+    modifier mintCompliance(address _sender, uint256 _quantity, uint256 _maxPerAddress, uint256 _maxMintPerTx) {
+        require(saleActive, "Sale is not live.");
         require(totalSupply() + _quantity <= totalSize, "Max supply reached");
         require(totalSupply() + _quantity <= collectionSize, "Max supply reached");
         require(_quantity >= 0 && _quantity <= _maxMintPerTx, "Invalid mint amount per transaction"); 
         require(_quantity >= 0 && _quantity <= _maxPerAddress, "Invalid mint amount"); 
-        require(numberMinted(msg.sender) + _quantity <= _maxPerAddress, "Can not mint this many");
+        require(numberMinted(_sender) + _quantity <= _maxPerAddress, "Can not mint this many");
+        _;
+    }
+
+    /** Galler Launchpad */
+    modifier onlyGallerLaunchpad() {
+        require(LAUNCHPAD != address(0), "launchpad address must set");
+        require(msg.sender == LAUNCHPAD, "must call by launchpad");
+        require(launchpadActive, "launchpad is not active");
         _;
     }
 
@@ -1487,9 +1499,8 @@ contract NFBEVO is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
         payable
         callerIsUser
         nonReentrant
-        mintCompliance(quantity, maxMintPerAddress, maxMintPerTx) /** Mint Compliance for Public Sale */
+        mintCompliance(msg.sender, quantity, maxMintPerAddress, maxMintPerTx) /** Mint Compliance for Public Sale */
     {
-        require(saleActive, "Public sale is not live.");
         _safeMint(msg.sender, quantity);
         refundIfOver(quantity * mintPrice);
     }
@@ -1498,9 +1509,8 @@ contract NFBEVO is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
         external
         isPackerContract
         nonReentrant
-        mintCompliance(quantity, maxMintPerAddress, maxMintPerTx) /** Mint Compliance for Public Sale */
+        mintCompliance(to, quantity, maxMintPerAddress, maxMintPerTx) /** Mint Compliance for Public Sale */
     {
-        require(saleActive, "Public sale is not live.");
         _safeMint(to, quantity);
     }
 
@@ -1560,6 +1570,24 @@ contract NFBEVO is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
                 : "";
     }
 
+    /** Galler Launchpad */
+    // return max supply config for launchpad, if no reserved will be collection's max supply
+    function getMaxLaunchpadSupply() view public returns (uint256) {
+        return totalSize;
+    }
+    // return current launchpad supply
+    function getLaunchpadSupply() view public returns (uint256) {
+        return totalSupply();
+    }
+    // this function need to restrict mint permission to launchpad contract
+    function mintTo(address to, uint256 quantity) external 
+        onlyGallerLaunchpad 
+        nonReentrant 
+        mintCompliance(to, quantity, maxMintPerAddress, maxMintPerTx) {
+
+        _safeMint(to, quantity);
+    }
+
     /// OWNER FUNCTIONS ///
 
     function setMintPrice(uint256 _mintPrice) external onlyOwner nonReentrant {
@@ -1578,6 +1606,14 @@ contract NFBEVO is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
          maxMintPerTx = _maxMintPerTx;
     }
 
+    function setLaunchpad(address _launchpad) external onlyOwner {
+         LAUNCHPAD = _launchpad;
+    }
+
+    function toggleLaunchpadActive() public onlyOwner {
+        launchpadActive = !launchpadActive;
+    }
+
     /** Standard withdraw function for the owner to pull the contract */
     function withdraw() external onlyOwner nonReentrant {
         uint256 sendAmount = address(this).balance;
@@ -1590,9 +1626,11 @@ contract NFBEVO is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
     }
 
     /** Mint Function only usable by contract owner. Use reserved for giveaways and promotions. */
-    function ownerMint(address to, uint256 quantity) public callerIsUser onlyOwner {
-        require(quantity + totalSupply() <= totalSize, "Max supply reached");
-        require(quantity + totalSupply() <= collectionSize, 'Max supply reached');
+    function ownerMint(address to, uint256 quantity) public 
+        callerIsUser 
+        onlyOwner 
+        mintCompliance(to, quantity, maxMintPerAddress, maxMintPerTx)
+    {
         _safeMint(to, quantity);
     }
 

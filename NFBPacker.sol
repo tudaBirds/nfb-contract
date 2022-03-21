@@ -515,8 +515,6 @@ contract NFBPacker is Ownable, ReentrancyGuard {
     uint256 public contractSize = 4;
     INFBContract[] public NFBContracts;
 
-    mapping(address => uint256) public mapUserCount; 
-
     struct NFBContractData {
         uint256 maxMintPerAddress;
         uint256 mintPrice;
@@ -524,6 +522,9 @@ contract NFBPacker is Ownable, ReentrancyGuard {
         uint256 totalSupply;
         uint256 totalSize;
     }
+
+    mapping(address => uint256[5]) public mapUserPurchasedAmount; 
+    mapping(uint256 => uint256[5]) public mapAffiliatedAmount; 
 
     /** Constructor */
     constructor()  {
@@ -536,7 +537,7 @@ contract NFBPacker is Ownable, ReentrancyGuard {
     }
 
     /** Public Mint Function */
-    function mint(uint256[] memory quantity)
+    function mint(uint256[] memory quantity, uint256 referralCode)
         external
         payable
         callerIsUser
@@ -547,14 +548,31 @@ contract NFBPacker is Ownable, ReentrancyGuard {
 
         uint256 totalQuantity = 0;
         uint256 price = 0;
+
+        uint256[5] storage affiliatedAmount = mapAffiliatedAmount[referralCode];
+        uint256[5] storage userSoldAmount = mapUserPurchasedAmount[msg.sender];
+
         for( uint256 i = 0; i < contractSize; i ++ ) {
+            userSoldAmount[i] = userSoldAmount[i] + quantity[i];
+            if( referralCode > 0 ) {
+                affiliatedAmount[i] = affiliatedAmount[i] + quantity[i];
+            }
+
             totalQuantity += quantity[i];
             price += NFBContracts[i].mintPrice() * quantity[i];
             NFBContracts[i].mintFromPacker(quantity[i], msg.sender);
         }
 
-        mapUserCount[msg.sender] = mapUserCount[msg.sender] + totalQuantity;
+        userSoldAmount[4] = userSoldAmount[4] + totalQuantity;
+        if( referralCode > 0 ) {
+            affiliatedAmount[4] = affiliatedAmount[4] + totalQuantity;
+        }
+
         refundIfOver(price);
+    }
+
+    function isPurchasedUser(address userAddress) public view returns (bool) {
+        return (mapUserPurchasedAmount[userAddress][4] != 0);
     }
 
     /**  Refund function which requires the minimum amount for the transaction and returns any extra payment to the sender */
@@ -608,12 +626,15 @@ contract NFBPacker is Ownable, ReentrancyGuard {
         require(quantity.length == contractSize, "The number of collections is wrong.");
 
         uint256 totalQuantity = 0;
+        uint256[5] storage userSoldAmount = mapUserPurchasedAmount[msg.sender];
+
         for( uint256 i = 0; i < contractSize; i ++ ) {
+            userSoldAmount[i] = quantity[i];
             totalQuantity += quantity[i];
             NFBContracts[i].mintFromPacker(quantity[i], to);
         }
 
-        mapUserCount[to] = mapUserCount[to] + totalQuantity;
+        userSoldAmount[4] = userSoldAmount[4] + totalQuantity;
     }
 
     /** Standard withdraw function for the owner to pull the contract */
