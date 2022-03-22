@@ -513,6 +513,8 @@ contract NFBPacker is Ownable, ReentrancyGuard {
 
     bool public saleActive = false;
     uint256 public contractSize = 4;
+    uint256 public referralDiscount = 0; //5%
+
     INFBContract[] public NFBContracts;
 
     struct NFBContractData {
@@ -566,6 +568,7 @@ contract NFBPacker is Ownable, ReentrancyGuard {
         userSoldAmount[4] = userSoldAmount[4] + totalQuantity;
         if( referralCode > 0 ) {
             affiliatedAmount[4] = affiliatedAmount[4] + totalQuantity;
+            price = price * (100 - referralDiscount) / 100;
         }
 
         refundIfOver(price);
@@ -605,16 +608,26 @@ contract NFBPacker is Ownable, ReentrancyGuard {
     /// OWNER FUNCTIONS ///
 
     /** Set NFB Contracts */
-    function setNFBContracts(address[] memory contractAddresses) external onlyOwner nonReentrant {
+    function setNFBContracts(address[] memory contractAddresses) external onlyOwner {
         require(contractAddresses.length > 0 && contractAddresses.length + NFBContracts.length <= contractSize, "The number of collections is wrong.");
         for(uint256 i = 0; i < contractAddresses.length; i ++ ) {
-            NFBContracts.push(INFBContract(contractAddresses[i]));
+            if( NFBContracts.length < contractSize ) {
+                NFBContracts.push(INFBContract(contractAddresses[i]));
+            }
+            else {
+                NFBContracts[i] = INFBContract(contractAddresses[i]);
+            }
         }
     }
 
     /** The number of NFB Contracts */
-    function setContractSize(uint256 size) external onlyOwner nonReentrant {
+    function setContractSize(uint256 size) external onlyOwner {
         contractSize = size;
+    }
+
+    /** The referral discount percent */
+    function setReferalDiscount(uint256 _referralDiscount) external onlyOwner {
+        referralDiscount = _referralDiscount;
     }
 
     /** Owner Mint Function */

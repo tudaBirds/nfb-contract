@@ -1442,7 +1442,7 @@ contract NFTCBO is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
     /** Contract Functionality Variables */
     uint256 public constant maxMintPerAddress = 100;
     uint256 public maxMintPerTx = 5;
-    uint256 public mintPrice = 0.001 ether;
+    uint256 public mintPrice = 2.8 ether;
     uint256 public totalSize = 660;
     bool public saleActive = false;
     address public packerContract;

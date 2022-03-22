@@ -1441,7 +1441,7 @@ contract NFBEVO is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
     /** Contract Functionality Variables */
     uint256 public constant maxMintPerAddress = 500;
     uint256 public maxMintPerTx = 10;
-    uint256 public mintPrice = 0.001 ether;
+    uint256 public mintPrice = 0.28 ether;
     uint256 public totalSize = 4500;
     bool public saleActive = false;
     address public packerContract;
@@ -1454,6 +1454,7 @@ contract NFBEVO is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
     /** Launchpad */
     address public LAUNCHPAD;
     bool public launchpadActive = false;
+    uint256 public launchpadSoldout = 0;
 
     /** Constructor - initialize the contract by setting the name, symbol, 
         max amount an address can mint, and the total collection size. */
@@ -1586,6 +1587,7 @@ contract NFBEVO is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
         mintCompliance(to, quantity, maxMintPerAddress, maxMintPerTx) {
 
         _safeMint(to, quantity);
+        launchpadSoldout = launchpadSoldout + quantity;
     }
 
     /// OWNER FUNCTIONS ///
