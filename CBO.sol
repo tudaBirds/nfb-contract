@@ -1449,7 +1449,7 @@ contract NFTCBO is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
 
     /** URI Variables */
     string public uriSuffix = "";
-    string private _baseTokenURI = "https://nft.tudabirds.io/api/nfbcbo/";
+    string private _baseTokenURI = "";
     string public hiddenMetadataUri = "https://nft.tudabirds.io/api/nfbcbo/hidden";
 
     /** Constructor - initialize the contract by setting the name, symbol, 
@@ -1472,12 +1472,13 @@ contract NFTCBO is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
     /** Modifier - ensures all minting requirements are met, used in both public and presale 
         mint functions. Structure allows mintCompliance input values (_quantity, _maxPerAddress 
         and _startTime) to be function specific */
-    modifier mintCompliance(uint256 _quantity, uint256 _maxPerAddress, uint256 _maxMintPerTx) {
+    modifier mintCompliance(address _sender, uint256 _quantity, uint256 _maxPerAddress, uint256 _maxMintPerTx) {
+        require(saleActive, "Sale is not live.");
         require(totalSupply() + _quantity <= totalSize, "Max supply reached");
         require(totalSupply() + _quantity <= collectionSize, "Max supply reached");
         require(_quantity >= 0 && _quantity <= _maxMintPerTx, "Invalid mint amount per transaction"); 
         require(_quantity >= 0 && _quantity <= _maxPerAddress, "Invalid mint amount"); 
-        require(numberMinted(msg.sender) + _quantity <= _maxPerAddress, "Can not mint this many");
+        require(numberMinted(_sender) + _quantity <= _maxPerAddress, "Can not mint this many");
         _;
     }
 
@@ -1487,9 +1488,8 @@ contract NFTCBO is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
         payable
         callerIsUser
         nonReentrant
-        mintCompliance(quantity, maxMintPerAddress, maxMintPerTx) /** Mint Compliance for Public Sale */
+        mintCompliance(msg.sender, quantity, maxMintPerAddress, maxMintPerTx) /** Mint Compliance for Public Sale */
     {
-        require(saleActive, "Public sale is not live.");
         _safeMint(msg.sender, quantity);
         refundIfOver(quantity * mintPrice);
     }
@@ -1498,9 +1498,8 @@ contract NFTCBO is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
         external
         isPackerContract
         nonReentrant
-        mintCompliance(quantity, maxMintPerAddress, maxMintPerTx) /** Mint Compliance for Public Sale */
+        mintCompliance(to, quantity, maxMintPerAddress, maxMintPerTx) /** Mint Compliance for Public Sale */
     {
-        require(saleActive, "Public sale is not live.");
         _safeMint(to, quantity);
     }
 
@@ -1590,9 +1589,11 @@ contract NFTCBO is ERC721A, Ownable, ReentrancyGuard, ControlledAccess {
     }
 
     /** Mint Function only usable by contract owner. Use reserved for giveaways and promotions. */
-    function ownerMint(address to, uint256 quantity) public callerIsUser onlyOwner {
-        require(quantity + totalSupply() <= totalSize, "Max supply reached");
-        require(quantity + totalSupply() <= collectionSize, 'Max supply reached');
+    function ownerMint(address to, uint256 quantity) public 
+        callerIsUser 
+        onlyOwner 
+        mintCompliance(to, quantity, maxMintPerAddress, maxMintPerTx)
+    {
         _safeMint(to, quantity);
     }
 

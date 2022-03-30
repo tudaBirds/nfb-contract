@@ -511,7 +511,7 @@ interface INFBContract {
 contract NFBPacker is Ownable, ReentrancyGuard {
     using Strings for uint256; 
 
-    bool public saleActive = false;
+    bool public saleActive = true;
     uint256 public contractSize = 4;
     uint256 public referralDiscount = 0; //5%
 
@@ -609,7 +609,7 @@ contract NFBPacker is Ownable, ReentrancyGuard {
 
     /** Set NFB Contracts */
     function setNFBContracts(address[] memory contractAddresses) external onlyOwner {
-        require(contractAddresses.length > 0 && contractAddresses.length + NFBContracts.length <= contractSize, "The number of collections is wrong.");
+        require(contractAddresses.length == contractSize, "The number of collections is wrong.");
         for(uint256 i = 0; i < contractAddresses.length; i ++ ) {
             if( NFBContracts.length < contractSize ) {
                 NFBContracts.push(INFBContract(contractAddresses[i]));
