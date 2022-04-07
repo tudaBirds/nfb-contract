@@ -554,15 +554,17 @@ contract NFBPacker is Ownable, ReentrancyGuard {
         uint256[5] storage affiliatedAmount = mapAffiliatedAmount[referralCode];
         uint256[5] storage userSoldAmount = mapUserPurchasedAmount[msg.sender];
 
-        for( uint256 i = 0; i < contractSize; i ++ ) {
-            userSoldAmount[i] = userSoldAmount[i] + quantity[i];
-            if( referralCode > 0 ) {
-                affiliatedAmount[i] = affiliatedAmount[i] + quantity[i];
-            }
+        for( uint256 i = 0; i < contractSize; i ++ ) {    
+            if( quantity[i] > 0 ) {
+                if( referralCode > 0 ) {
+                    affiliatedAmount[i] = affiliatedAmount[i] + quantity[i];
+                }
 
-            totalQuantity += quantity[i];
-            price += NFBContracts[i].mintPrice() * quantity[i];
-            NFBContracts[i].mintFromPacker(quantity[i], msg.sender);
+                userSoldAmount[i] = userSoldAmount[i] + quantity[i];
+                totalQuantity += quantity[i];
+                price += NFBContracts[i].mintPrice() * quantity[i];
+                NFBContracts[i].mintFromPacker(quantity[i], msg.sender);
+            }
         }
 
         userSoldAmount[4] = userSoldAmount[4] + totalQuantity;
@@ -630,9 +632,23 @@ contract NFBPacker is Ownable, ReentrancyGuard {
         referralDiscount = _referralDiscount;
     }
 
+    /** Set purchased information */
+    function setPurchasedInfo(address user, uint256[] memory quantity)
+        public
+        callerIsUser
+        onlyOwner
+    {
+        require(quantity.length == 5, "Invalid parameter");
+
+        uint256[5] storage userSoldAmount = mapUserPurchasedAmount[user];
+        for( uint256 i = 0; i < 5; i ++ ) {
+            userSoldAmount[i] = quantity[i];
+        }
+    }
+
     /** Owner Mint Function */
     function ownerMint(address to, uint256[] memory quantity)
-        external
+        public
         callerIsUser
         onlyOwner
     {
@@ -642,12 +658,24 @@ contract NFBPacker is Ownable, ReentrancyGuard {
         uint256[5] storage userSoldAmount = mapUserPurchasedAmount[msg.sender];
 
         for( uint256 i = 0; i < contractSize; i ++ ) {
-            userSoldAmount[i] = quantity[i];
-            totalQuantity += quantity[i];
-            NFBContracts[i].mintFromPacker(quantity[i], to);
+            if( quantity[i] > 0) {
+                userSoldAmount[i] = userSoldAmount[i] + quantity[i];
+                totalQuantity += quantity[i];
+                NFBContracts[i].mintFromPacker(quantity[i], to);
+            }  
         }
 
         userSoldAmount[4] = userSoldAmount[4] + totalQuantity;
+    }
+
+    function ownerBatchMint(address[] memory to, uint256[] memory quantity)
+        external
+        callerIsUser
+        onlyOwner
+    {
+        for( uint256 i = 0; i < to.length; i ++ ) {
+            ownerMint(to[i], quantity);
+        }
     }
 
     /** Standard withdraw function for the owner to pull the contract */
